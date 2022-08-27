@@ -1,0 +1,20 @@
+<!doctype HTML>
+
+<html>
+    <head>
+      <meta charset="utf-8">
+      <link href="{{url_for('static', filename='css/style.css')}}"  rel="stylesheet" type="text/css">
+      <title>Control Panel</title>
+    </head>
+    <body>
+      <button id="toggle-switch">Toggle Switch</button>
+      <script>
+        document.getElementById('toggle-switch').addEventListener('click', async _ => {
+          const response = await fetch("{{url_for('control_switch', cmd='toggle')}}", {
+            method: 'post',
+            body: { }
+          });
+        });
+      </script>
+    </body>
+</html>
