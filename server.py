@@ -11,7 +11,7 @@ app.config['MQTT_BROKER_URL'] = config.MQTT_BROKER
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_REFRESH_TIME'] = 0.1  # refresh time in seconds
 mqtt = Mqtt(app)
-socketio = SocketIO(app, logger=True, engineio_logger=True)
+socketio = SocketIO(app)
 
 @mqtt.on_connect()
 def handle_mqtt_connect(client, userdata, flags, rc):
@@ -26,9 +26,17 @@ def handle_mqtt_message(client, userdata, message):
 
 @app.route("/control/<cmd>", methods=["POST"])
 def control_switch(cmd):
+    # TODO: This api is really stupid
+    # it would make everything in the client much easier
+    # if the actual command would be given via the body
+    # since this is only used as a simple demo, I'm leaving it as it
     if cmd in {"on", "off", "toggle"}:
         print("Sending command")
         mqtt.publish(util.control_channel(), cmd)
+        return "Ok", 200
+    if cmd == "status":
+        print("Sending command")
+        mqtt.publish(util.control_channel())
         return "Ok", 200
     return "Unknown command", 401
 
