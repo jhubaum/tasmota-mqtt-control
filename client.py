@@ -4,16 +4,19 @@
 For details, look at the documentation: 
     https://tasmota.github.io/docs/MQTT/#examples
 """
-import paho.mqtt.client as mqtt
 import logging
+import time
+import paho.mqtt.client as mqtt
 
-from config import TASMOTA_TOPIC, MQTT_BROKER
-
+import util
+import config
 
 enabled: bool = False
+message_queue = []
 
-def on_message(client, userdata, message):
+def simulate_voltage_control(client, userdata, message):
     global enabled
+    global message_queue
 
     message = message.payload.decode("utf-8")
     if message == "":
@@ -31,20 +34,22 @@ def on_message(client, userdata, message):
         logging.warning(f"Unknown message: {message}")
         return
 
-    # Send info about state back.
-    client.publish(f"stat/{TASMOTA_TOPIC}/POWER", "ON" if enabled else "OFF")
-
-
-client = mqtt.Client("Power Switch")
-client.connect(MQTT_BROKER) 
-
-client.loop_start()
-
-client.subscribe(f"cmnd/{TASMOTA_TOPIC}/POWER")
-client.on_message=on_message 
+    message_queue.append("ON" if enabled else "OFF")
 
 print("Initialise: Disabled")
 
-while True:
-    # todo: catch kill signal for proper exit
+client = mqtt.Client("Simulated Socket")
+client.connect(config.MQTT_BROKER)
+client.subscribe(util.control_channel())
+client.on_message = simulate_voltage_control
+
+client.loop_start()
+
+try:
+    while True:
+        time.sleep(0.1)
+        if len(message_queue) > 0:
+            print("Sending status update")
+            client.publish(util.status_channel(), message_queue.pop())
+except KeyboardInterrupt:
     pass
