@@ -42,7 +42,7 @@ def control_switch(cmd):
 
 @app.route("/")
 def home():
-    return render_template('control_panel.html')
+    return render_template('control_panel.html', host_url=config.MQTT_BROKER, mqtt_topic=config.TASMOTA_TOPIC)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
