@@ -3,12 +3,15 @@ import util
 
 from flask import Flask, render_template
 from flask_mqtt import Mqtt
+from flask_socketio import SocketIO
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
 app.config['MQTT_BROKER_URL'] = config.MQTT_BROKER
 app.config['MQTT_BROKER_PORT'] = 1883
 app.config['MQTT_REFRESH_TIME'] = 0.1  # refresh time in seconds
 mqtt = Mqtt(app)
+socketio = SocketIO(app, logger=True, engineio_logger=True)
 
 @mqtt.on_connect()
 def handle_mqtt_connect(client, userdata, flags, rc):
@@ -16,7 +19,10 @@ def handle_mqtt_connect(client, userdata, flags, rc):
 
 @mqtt.on_message()
 def handle_mqtt_message(client, userdata, message):
-    print(message.payload.decode('utf-8'))
+    global socketio
+    message = message.payload.decode('utf-8')
+    print("Received MQTT status update: ", message)
+    socketio.emit('status-update', dict(Power=message))
 
 @app.route("/control/<cmd>", methods=["POST"])
 def control_switch(cmd):
@@ -31,4 +37,4 @@ def home():
     return render_template('control_panel.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True)
